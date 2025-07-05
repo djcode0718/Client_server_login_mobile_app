@@ -13,8 +13,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> login() async {
     final url = Uri.parse(
-      // 'https://7413-103-88-239-163.ngrok-free.app/login',
-      'http://192.168.0.154:5000/login',
+      'https://2b65-103-88-239-163.ngrok-free.app/login',
+      // 'http://192.168.0.154:5000/login',
     ); // 🔁 Replace with your Mac's IP
 
     try {

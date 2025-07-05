@@ -13,8 +13,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> signup() async {
     final url = Uri.parse(
-      // 'https://7413-103-88-239-163.ngrok-free.app/signup',
-      'http://192.168.0.154:5000/signup',
+      'https://2b65-103-88-239-163.ngrok-free.app/signup',
+      // 'http://192.168.0.154:5000/signup',
     ); // Replace with your IP
 
     try {

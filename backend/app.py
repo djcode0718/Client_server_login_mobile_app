@@ -3,10 +3,15 @@ from flask_cors import CORS
 import sqlite3
 import os
 
+from argon2 import PasswordHasher
+
 app = Flask(__name__)
-CORS(app)  # 🔓 Allow cross-origin requests from Flutter
+CORS(app, supports_credentials=True)
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
+
+# Use Argon2id by default
+ph = PasswordHasher()
 
 # DB setup
 def init_db():
@@ -34,17 +39,26 @@ def login():
     username = get_data(request, 'username')
     password = get_data(request, 'password')
 
+    if not username or not password:
+        return jsonify({'status': 'fail', 'message': 'Missing username or password'})
+
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-        user = c.fetchone()
+        c.execute("SELECT password FROM users WHERE username=?", (username,))
+        row = c.fetchone()
 
-    if user:
-        print(f"correct {username}: {password}")
+    if not row:
+        return jsonify({'status': 'fail', 'message': 'Invalid credentials'})
+
+    stored_hash = row[0]
+
+    try:
+        ph.verify(stored_hash, password)
+        # If verify passes, the password is correct
+        print(f"✅ Correct credentials: {username}")
         return jsonify({'status': 'success', 'message': 'Login successful'})
-    
-    else:
-        print(f"wrong {username}: {password}")
+    except Exception:
+        print(f"❌ Wrong credentials: {username}")
         return jsonify({'status': 'fail', 'message': 'Invalid credentials'})
 
 @app.route('/signup', methods=['POST'])
@@ -52,11 +66,18 @@ def signup():
     username = get_data(request, 'username')
     password = get_data(request, 'password')
 
+    if not username or not password:
+        return jsonify({'status': 'fail', 'message': 'Missing username or password'})
+
     try:
+        hashed_password = ph.hash(password)
+
         with sqlite3.connect(DB_PATH) as conn:
             c = conn.cursor()
-            c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+            c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
             conn.commit()
+
+        print(f"✅ User created: {username}")
         return jsonify({'status': 'success', 'message': 'Signup successful'})
     except sqlite3.IntegrityError:
         return jsonify({'status': 'fail', 'message': 'Username already exists'})
